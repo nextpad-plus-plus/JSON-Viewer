@@ -45,3 +45,9 @@ set_target_properties(NppJsonViewer PROPERTIES PREFIX "" SUFFIX ".dylib")
 
 set(PLUGIN_INSTALL_DIR "$ENV{HOME}/.notepad++/plugins/NppJsonViewer")
 install(TARGETS NppJsonViewer DESTINATION "${PLUGIN_INSTALL_DIR}")
+# Toolbar + panel icons live in resources/. Install rule mirrors the
+# NppAIAssistant / NppLLM / NppMarkdownPanel pattern so a fresh
+# checkout produces a working install without any manual file copying.
+install(DIRECTORY resources/ DESTINATION "${PLUGIN_INSTALL_DIR}/resources"
+    PATTERN ".DS_Store"  EXCLUDE
+    PATTERN ".gitignore" EXCLUDE)
