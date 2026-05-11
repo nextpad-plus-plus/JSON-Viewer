@@ -10,7 +10,7 @@ namespace npj {
 
 std::string settingsPath() {
     NSString *home = NSHomeDirectory();
-    NSString *dir  = [home stringByAppendingPathComponent:@".notepad++/plugins/NppJsonViewer"];
+    NSString *dir  = [home stringByAppendingPathComponent:@".nextpad++/plugins/NppJsonViewer"];
     [[NSFileManager defaultManager] createDirectoryAtPath:dir
                               withIntermediateDirectories:YES
                                                attributes:nil error:nil];
