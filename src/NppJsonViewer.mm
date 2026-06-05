@@ -22,6 +22,7 @@
 #import "JsonFormatter.h"
 #import "JsonSettings.h"
 #import "JsonSettingsDialog.h"
+#import "JsonViewerBridge.h"   // inter-plugin handshake (JSTool "JSON Viewer" item)
 
 // ─────────────────────────────────────────────────────────────────────────
 //  Plugin identification
@@ -603,6 +604,54 @@ extern "C" NPP_EXPORT void beNotified(SCNotification *n) {
     }
 }
 
-extern "C" NPP_EXPORT intptr_t messageProc(uint32_t, uintptr_t, intptr_t) {
+// ─────────────────────────────────────────────────────────────────────────
+//  Inter-plugin bridge: make the panel visible on request (does NOT toggle).
+//  Used by the JSTool (JSMinNPP) "JSON Viewer" menu item via NPPM_MSGTOPLUGIN.
+//  Mirrors the "show" branch of cmdTogglePanel() but never hides.
+// ─────────────────────────────────────────────────────────────────────────
+static void bridgeShowPanel() {
+    ensureContentView();
+
+    if (g_panelHandle == 0 && g_floatingPanel == nil) {
+        intptr_t h = sNppData._sendMessage(sNppData._nppHandle,
+                                           NPPM_DMM_REGISTERPANEL,
+                                           (uintptr_t)(__bridge void *)sContentView,
+                                           (intptr_t)"JSON Viewer");
+        if (h > 0) g_panelHandle = (uint64_t)h;
+        else        ensureFloatingPanel();
+    }
+
+    if (!panelIsShown()) {
+        sPanelVisible = true;
+        npp(NPPM_SETMENUITEMCHECK, (uintptr_t)sFuncItem[kCmdShowPanel]._cmdID, 1);
+        if (g_panelHandle > 0) {
+            sNppData._sendMessage(sNppData._nppHandle, NPPM_DMM_SHOWPANEL,
+                                  (uintptr_t)g_panelHandle, 0);
+        } else if (g_floatingPanel) {
+            [g_floatingPanel orderFront:nil];
+        }
+    }
+    refreshTree();
+}
+
+extern "C" NPP_EXPORT intptr_t messageProc(uint32_t Message, uintptr_t wParam, intptr_t lParam) {
+    // The host delivers inter-plugin messages as (NPPM_MSGTOPLUGIN, 0, ci).
+    if (Message == NPPM_MSGTOPLUGIN && lParam) {
+        struct CommunicationInfo *ci = (struct CommunicationInfo *)lParam;
+        switch (ci->internalMsg) {
+            case JV_BRIDGE_MSG_PING:
+                // Identify ourselves as a bridge-capable JSON Viewer.
+                return JV_BRIDGE_ACK;
+            case JV_BRIDGE_MSG_SHOWPANEL:
+                if ([NSThread isMainThread]) {
+                    bridgeShowPanel();
+                } else {
+                    dispatch_async(dispatch_get_main_queue(), ^{ bridgeShowPanel(); });
+                }
+                return 1;
+            default:
+                break;
+        }
+    }
     return 1;
 }
