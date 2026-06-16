@@ -4,19 +4,9 @@
 
 #import "JsonSettingsDialog.h"
 
-// Persistence helpers (implemented at the bottom of this file to avoid
-// introducing a whole new TU).
+// Persistence helpers. settingsPath() is defined in NppJsonViewer.mm because it
+// needs the host handle (sNppData) to resolve NPPM_GETPLUGINSCONFIGDIR.
 namespace npj {
-
-std::string settingsPath() {
-    NSString *home = NSHomeDirectory();
-    NSString *dir  = [home stringByAppendingPathComponent:@".nextpad++/plugins/NppJsonViewer"];
-    [[NSFileManager defaultManager] createDirectoryAtPath:dir
-                              withIntermediateDirectories:YES
-                                               attributes:nil error:nil];
-    NSString *full = [dir stringByAppendingPathComponent:@"config.json"];
-    return std::string([full UTF8String]);
-}
 
 Settings loadSettings() {
     Settings s;

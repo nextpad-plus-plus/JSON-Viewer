@@ -99,6 +99,39 @@ static inline intptr_t sci(NppHandle h, uint32_t msg, uintptr_t w = 0, intptr_t 
     return sNppData._sendMessage(h, msg, w, l);
 }
 
+// Settings file path — resolved via the host plugin config dir
+// (NPPM_GETPLUGINSCONFIGDIR), namespaced under a NppJsonViewer/ subfolder so it
+// survives plugin updates (the plugin's own folder does not). Falls back to the
+// macOS app-support base, never a hardcoded ~/.nextpad++ dot-folder. Migrates the
+// JSON once from the old per-plugin-folder location.
+namespace npj {
+std::string settingsPath() {
+    @autoreleasepool {
+        char buf[1024] = {0};
+        npp(NPPM_GETPLUGINSCONFIGDIR, (uintptr_t)sizeof(buf), (intptr_t)buf);
+        NSString *cfgRoot = (buf[0] != '\0')
+            ? [NSString stringWithUTF8String:buf]
+            : [NSSearchPathForDirectoriesInDomains(NSApplicationSupportDirectory,
+                  NSUserDomainMask, YES).firstObject
+                  stringByAppendingPathComponent:@"Nextpad++/plugins/Config"];
+        NSString *dir = [cfgRoot stringByAppendingPathComponent:@"NppJsonViewer"];
+        NSFileManager *fm = [NSFileManager defaultManager];
+        [fm createDirectoryAtPath:dir withIntermediateDirectories:YES attributes:nil error:nil];
+        NSString *newPath = [dir stringByAppendingPathComponent:@"config.json"];
+
+        // One-time migration from the old per-plugin-folder location.
+        if (![fm fileExistsAtPath:newPath]) {
+            for (NSString *legacy in @[@".nextpad++/plugins/NppJsonViewer/config.json",
+                                       @".notepad++/plugins/NppJsonViewer/config.json"]) {
+                NSString *old = [NSHomeDirectory() stringByAppendingPathComponent:legacy];
+                if ([fm fileExistsAtPath:old]) { [fm copyItemAtPath:old toPath:newPath error:nil]; break; }
+            }
+        }
+        return std::string([newPath UTF8String]);
+    }
+}
+} // namespace npj
+
 // ─────────────────────────────────────────────────────────────────────────
 //  Resources directory — sibling "resources/" folder next to the dylib.
 // ─────────────────────────────────────────────────────────────────────────

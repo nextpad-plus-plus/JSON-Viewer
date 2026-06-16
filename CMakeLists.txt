@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.20)
-project(NppJsonViewer LANGUAGES CXX OBJCXX)
+project(NppJsonViewer VERSION 1.0.3 LANGUAGES CXX OBJCXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_OBJCXX_STANDARD 17)
 set(CMAKE_CXX_VISIBILITY_PRESET hidden)
@@ -42,8 +42,10 @@ target_compile_options(NppJsonViewer PRIVATE
     # to Objective-C++ TUs via generator expression.
     $<$<COMPILE_LANGUAGE:OBJCXX>:-fobjc-arc>)
 set_target_properties(NppJsonViewer PROPERTIES PREFIX "" SUFFIX ".dylib")
+# Stamp version into the dylib Mach-O current_version (Plugins Admin reads it).
+target_link_options(NppJsonViewer PRIVATE "-Wl,-current_version,${PROJECT_VERSION}")
 
-set(PLUGIN_INSTALL_DIR "$ENV{HOME}/.nextpad++/plugins/NppJsonViewer")
+set(PLUGIN_INSTALL_DIR "$ENV{HOME}/Library/Application Support/Nextpad++/plugins/NppJsonViewer")
 install(TARGETS NppJsonViewer DESTINATION "${PLUGIN_INSTALL_DIR}")
 # Toolbar + panel icons live in resources/. Install rule mirrors the
 # NppAIAssistant / NppLLM / NppMarkdownPanel pattern so a fresh

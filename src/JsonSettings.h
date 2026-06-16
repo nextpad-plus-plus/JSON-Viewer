@@ -25,7 +25,8 @@ struct Settings {
     LineFormat  lineFormat  = LineFormat::Default;
 };
 
-// Load / save at ~/.nextpad++/plugins/NppJsonViewer/config.json.
+// Load / save under the host plugin config dir (NPPM_GETPLUGINSCONFIGDIR):
+//   <config>/NppJsonViewer/config.json  (defined in NppJsonViewer.mm).
 std::string settingsPath();
 Settings    loadSettings();
 void        saveSettings(const Settings& s);
